@@ -10,13 +10,20 @@ import 'package:flutter/material.dart';
 ///
 /// The widget is composed on an [Icon] and [Text]. Tapping on the widget shows
 /// a colored [InkWell] animation.
+const _rowHeight = 100.0;
+final _borderRadius = BorderRadius.circular(_rowHeight / 2);
+
 class Category extends StatelessWidget {
   /// Creates a [Category].
   ///
   /// A [Category] saves the name of the Category (e.g. 'Length'), its color for
   /// the UI, and the icon that represents it (e.g. a ruler).
-  // TODO: You'll need the name, color, and iconLocation from main.dart
-  const Category({Key? key}) : super(key: key);
+  final String name;
+  final IconData icon;
+  final ColorSwatch color;
+  const Category(
+      {Key? key, required this.name, required this.icon, required this.color})
+      : super(key: key);
 
   /// Builds a custom widget that shows [Category] information.
   ///
@@ -27,7 +34,39 @@ class Category extends StatelessWidget {
   // Theme ancestor in the tree. Below, we obtain the display1 text theme.
   // See https://api.flutter.dev/flutter/material/Theme-class.html
   Widget build(BuildContext context) {
-    // TODO: Build the custom widget here, referring to the Specs.
-    return Container();
+    return Material(
+      color: Colors.transparent,
+      child: SizedBox(
+        height: _rowHeight,
+        child: InkWell(
+          onTap: () => print('I was tapped!'),
+          borderRadius: _borderRadius,
+          splashColor: color,
+          highlightColor: color,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Icon(
+                    icon,
+                    size: 60.0,
+                  ),
+                ),
+                Center(
+                  child: Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headline5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
