@@ -17,9 +17,11 @@ class ConverterRoute extends StatelessWidget {
   final List<Unit> units;
 
   /// This [ConverterRoute] requires the color and units to not be null.
-  // TODO: Pass in the [Category]'s color
+  final Color color;
+
   const ConverterRoute({
     required this.units,
+    required this.color,
     Key? key,
   }) : super(key: key);
 
@@ -27,8 +29,8 @@ class ConverterRoute extends StatelessWidget {
   Widget build(BuildContext context) {
     // Here is just a placeholder for a list of mock units
     final unitWidgets = units.map((Unit unit) {
-      // TODO: Set the color for this Container
       return Container(
+        color: color,
         margin: const EdgeInsets.all(8.0),
         padding: const EdgeInsets.all(16.0),
         child: Column(
