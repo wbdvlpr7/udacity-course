@@ -34,14 +34,49 @@ class ConverterRoute extends StatefulWidget {
 }
 
 class _ConverterRouteState extends State<ConverterRoute> {
-  // TODO: Set some variables, such as for keeping track of the user's input
-  // value and units
+  var ddlValue = '';
+  double? _inputValue;
+  String _outputValue = '';
+  Unit? _inputUnit;
+  Unit? _outputUnit;
+  bool _hasInvalidInput = false;
+  List<DropdownMenuItem<String>>? _dropdownItems;
 
-  // TODO: Determine whether you need to override anything, such as initState()
+  @override
+  void initState() {
+    super.initState();
+    _initValues();
+    _initDropdownItems();
+  }
 
-  // TODO: Add other helper functions. We've given you one, _format()
+  void _initValues() {
+    setState(() {
+      _inputUnit = widget.units[0];
+      _outputUnit = widget.units[1];
+    });
+  }
 
-  /// Clean up conversion; trim trailing zeros, e.g. 5.500 -> 5.5, 10.0 -> 10
+  void _initDropdownItems() {
+    var items = widget.units
+        .map((unit) => DropdownMenuItem(
+              value: unit.name,
+              child: Text(unit.name!),
+            ))
+        .toList();
+    setState(() {
+      _dropdownItems = items;
+    });
+  }
+
+  _calculate() {
+    if (_inputValue == null) return;
+    setState(() {
+      final calculatedValue =
+          _inputValue! * _inputUnit!.conversion! / _outputUnit!.conversion!;
+      _outputValue = _format(calculatedValue);
+    });
+  }
+
   String _format(double conversion) {
     var outputNum = conversion.toStringAsPrecision(7);
     if (outputNum.contains('.') && outputNum.endsWith('0')) {
@@ -57,41 +92,141 @@ class _ConverterRouteState extends State<ConverterRoute> {
     return outputNum;
   }
 
+  void _onCahngedInputDropdown(value) {
+    setState(() {
+      _inputUnit = widget.units.firstWhere((u) => u.name == value);
+    });
+    _calculate();
+  }
+
+  void _onCahngedOutputDropdown(value) {
+    setState(() {
+      _outputUnit = widget.units.firstWhere((u) => u.name == value);
+    });
+    _calculate();
+  }
+
+  void onChangedInputTextField(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _outputValue = '';
+        _hasInvalidInput = false;
+        return;
+      }
+      final parsedValue = double.tryParse(value);
+      if (parsedValue == null) {
+        _outputValue = '';
+        _hasInvalidInput = true;
+        return;
+      }
+      _hasInvalidInput = false;
+      _inputValue = parsedValue;
+      _calculate();
+    });
+  }
+
+  Widget _buildDropdown(String? value, Function(String?)? onChanged) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border.all(
+          width: 1.0,
+          color: Colors.grey[400]!,
+        ),
+      ),
+      margin: const EdgeInsets.only(top: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: ButtonTheme(
+        alignedDropdown: true,
+        child: DropdownButton<String>(
+          icon: const Icon(Icons.arrow_drop_down),
+          style: Theme.of(context).textTheme.headline6,
+          value: value,
+          isExpanded: true,
+          underline: Container(),
+          borderRadius: BorderRadius.circular(5),
+          items: _dropdownItems,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  List<DropdownMenuItem<String>> _buildDropdownItems() {
+    return widget.units
+        .map((e) => DropdownMenuItem<String>(
+              value: e.name,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  e.name.toString(),
+                ),
+              ),
+            ))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // TODO: Create the 'input' group of widgets. This is a Column that
-    // includes the input value, and 'from' unit [Dropdown].
-
-    // TODO: Create a compare arrows icon.
-
-    // TODO: Create the 'output' group of widgets. This is a Column that
-    // includes the output value, and 'to' unit [Dropdown].
-
-    // TODO: Return the input, arrows, and output widgets, wrapped in a Column.
-
-    // TODO: Delete the below placeholder code.
-    final unitWidgets = widget.units.map((Unit unit) {
-      return Container(
-        color: widget.color,
-        margin: const EdgeInsets.all(8.0),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            Text(
-              unit.name!,
-              style: Theme.of(context).textTheme.headline5,
+    final inputWidget = Padding(
+      padding: _padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            keyboardType: TextInputType.number,
+            onChanged: onChangedInputTextField,
+            style: Theme.of(context).textTheme.headline4,
+            decoration: InputDecoration(
+              errorText: _hasInvalidInput ? 'Invalid number entered' : null,
+              labelStyle: Theme.of(context).textTheme.headline4,
+              border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+              labelText: 'Input',
             ),
-            Text(
-              'Conversion: ${unit.conversion}',
-              style: Theme.of(context).textTheme.subtitle1,
+          ),
+          _buildDropdown(_inputUnit!.name, _onCahngedInputDropdown),
+        ],
+      ),
+    );
+    final outputWidget = Padding(
+      padding: _padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InputDecorator(
+            child: Text(
+              _outputValue,
+              style: Theme.of(context).textTheme.headline4,
             ),
-          ],
-        ),
-      );
-    }).toList();
+            decoration: InputDecoration(
+              labelStyle: Theme.of(context).textTheme.headline4,
+              border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+              labelText: 'Output',
+            ),
+          ),
+          _buildDropdown(_outputUnit!.name, _onCahngedOutputDropdown),
+        ],
+      ),
+    );
 
-    return ListView(
-      children: unitWidgets,
+    const compareArrow = RotatedBox(
+      quarterTurns: 1,
+      child: Icon(
+        Icons.compare_arrows,
+        size: 40.0,
+      ),
+    );
+
+    return Padding(
+      padding: _padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          inputWidget,
+          compareArrow,
+          outputWidget,
+        ],
+      ),
     );
   }
 }
